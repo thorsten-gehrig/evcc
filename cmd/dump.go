@@ -35,7 +35,7 @@ func init() {
 	dumpConfig = dumpCmd.Flags().Bool("cfg", false, "Dump config file")
 }
 
-func handle(device any, err error) any {
+func handle(device any, _ int, err error) any {
 	if err != nil {
 		log.FATAL.Fatal(err)
 	}
