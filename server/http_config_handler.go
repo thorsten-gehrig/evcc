@@ -127,7 +127,6 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, err)
 		return
 	}
-	_ = class
 
 	var named []config.Named
 
@@ -151,6 +150,49 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResult(w, res)
 }
 
+// newDeviceHandler creates a new device by class
+func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	class, err := templates.ClassString(vars["class"])
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var req map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	typ := "template"
+	if req["type"] != nil {
+		typ = req["type"].(string)
+		delete(req, "type")
+	}
+
+	var dev any
+
+	switch class {
+	case templates.Charger:
+		dev, err = charger.NewFromConfig(typ, req)
+	case templates.Meter:
+		dev, err = meter.NewFromConfig(typ, req)
+	case templates.Vehicle:
+		dev, err = vehicle.NewFromConfig(typ, req)
+	}
+
+	_ = dev
+
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	jsonResult(w, "OK")
+}
+
 // testHandler tests a configuration by class
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -166,34 +208,6 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, err)
 		return
 	}
-
-	// var req struct {
-	// 	Type  string
-	// 	Other map[string]any `mapstructure:",remain"`
-	// }
-
-	// if err := mapstructure.Decode(plain, &req); err != nil {
-	// 	jsonError(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-
-	// tmpl, err := templates.ByName(class, req.Name)
-	// if err != nil {
-	// 	jsonError(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-
-	// b, _, err := tmpl.RenderResult(templates.TemplateRenderModeInstance, req.Other)
-	// if err != nil {
-	// 	jsonError(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-
-	// var instance any
-	// if err := yaml.Unmarshal(b, &instance); err != nil {
-	// 	jsonError(w, http.StatusBadRequest, err)
-	// 	return
-	// }
 
 	typ := "template"
 	if req["type"] != nil {
