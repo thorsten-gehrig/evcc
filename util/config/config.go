@@ -27,18 +27,30 @@ func Meter(name string) (api.Meter, error) {
 func Meters() map[string]api.Meter {
 	return instance.Meters()
 }
+func MetersConfig() []Named {
+	return instance.MetersConfig()
+}
+
 func Charger(name string) (api.Charger, error) {
 	return instance.Charger(name)
 }
 func Chargers() map[string]api.Charger {
 	return instance.Chargers()
 }
+func ChargersConfig() []Named {
+	return instance.ChargersConfig()
+}
+
 func Vehicle(name string) (api.Vehicle, error) {
 	return instance.Vehicle(name)
 }
 func Vehicles() map[string]api.Vehicle {
 	return instance.Vehicles()
 }
+func VehiclesConfig() []Named {
+	return instance.VehiclesConfig()
+}
+
 func ConfigureMeters(conf []Named) error {
 	return instance.ConfigureMeters(conf)
 }
@@ -50,9 +62,9 @@ func ConfigureVehicles(conf []Named) error {
 }
 
 type provider struct {
-	meters   map[string]api.Meter
-	chargers map[string]api.Charger
-	vehicles map[string]api.Vehicle
+	meters   map[string]container[api.Meter]
+	chargers map[string]container[api.Charger]
+	vehicles map[string]container[api.Vehicle]
 	visited  map[string]bool
 }
 
@@ -71,44 +83,59 @@ func (cp *provider) Meter(name string) (api.Meter, error) {
 			cp.visited[name] = true
 		}
 
-		return meter, nil
+		return meter.device, nil
 	}
 	return nil, fmt.Errorf("meter does not exist: %s", name)
 }
 
 // Meters returns the map configured of meters
 func (cp *provider) Meters() map[string]api.Meter {
-	return cp.meters
+	return deviceMap(cp.meters)
+}
+
+// MetersConfig returns the map configured of meters
+func (cp *provider) MetersConfig() []Named {
+	return configMap(cp.meters)
 }
 
 // Charger provides chargers by name
 func (cp *provider) Charger(name string) (api.Charger, error) {
 	if charger, ok := cp.chargers[name]; ok {
-		return charger, nil
+		return charger.device, nil
 	}
 	return nil, fmt.Errorf("charger does not exist: %s", name)
 }
 
 // Chargers returns the map configured of chargers
 func (cp *provider) Chargers() map[string]api.Charger {
-	return cp.chargers
+	return deviceMap(cp.chargers)
+}
+
+// ChargersConfig returns the map configured of chargers
+func (cp *provider) ChargersConfig() []Named {
+	return configMap(cp.chargers)
 }
 
 // Vehicle provides vehicles by name
 func (cp *provider) Vehicle(name string) (api.Vehicle, error) {
 	if vehicle, ok := cp.vehicles[name]; ok {
-		return vehicle, nil
+		return vehicle.device, nil
 	}
 	return nil, fmt.Errorf("vehicle does not exist: %s", name)
 }
 
 // Vehicles returns the map configured of vehicles
 func (cp *provider) Vehicles() map[string]api.Vehicle {
-	return cp.vehicles
+	return deviceMap(cp.vehicles)
+}
+
+// VehiclesConfig returns the map configured of vehicles
+func (cp *provider) VehiclesConfig() []Named {
+	return configMap(cp.vehicles)
 }
 
 func (cp *provider) ConfigureMeters(conf []Named) error {
-	cp.meters = make(map[string]api.Meter)
+	cp.meters = make(map[string]container[api.Meter])
 	for i, cc := range conf {
 		if cc.Name == "" {
 			return fmt.Errorf("cannot create meter %d: missing name", i+1)
@@ -124,7 +151,7 @@ func (cp *provider) ConfigureMeters(conf []Named) error {
 			return fmt.Errorf("duplicate meter name: %s already defined and must be unique", cc.Name)
 		}
 
-		cp.meters[cc.Name] = m
+		cp.meters[cc.Name] = container[api.Meter]{cc, m}
 	}
 
 	return nil
@@ -134,7 +161,7 @@ func (cp *provider) ConfigureChargers(conf []Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
 
-	cp.chargers = make(map[string]api.Charger)
+	cp.chargers = make(map[string]container[api.Charger])
 	for i, cc := range conf {
 		if cc.Name == "" {
 			return fmt.Errorf("cannot create charger %d: missing name", i+1)
@@ -155,7 +182,7 @@ func (cp *provider) ConfigureChargers(conf []Named) error {
 				return fmt.Errorf("duplicate charger name: %s already defined and must be unique", cc.Name)
 			}
 
-			cp.chargers[cc.Name] = c
+			cp.chargers[cc.Name] = container[api.Charger]{cc, c}
 			return nil
 		})
 	}
@@ -167,7 +194,7 @@ func (cp *provider) ConfigureVehicles(conf []Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
 
-	cp.vehicles = make(map[string]api.Vehicle)
+	cp.vehicles = make(map[string]container[api.Vehicle])
 	for i, cc := range conf {
 		if cc.Name == "" {
 			return fmt.Errorf("cannot create vehicle %d: missing name", i+1)
@@ -200,7 +227,7 @@ func (cp *provider) ConfigureVehicles(conf []Named) error {
 				return fmt.Errorf("duplicate vehicle name: %s already defined and must be unique", cc.Name)
 			}
 
-			cp.vehicles[cc.Name] = v
+			cp.vehicles[cc.Name] = container[api.Vehicle]{cc, v}
 			return nil
 		})
 	}

@@ -128,15 +128,15 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = class
 
-	var res any
+	var res []config.Named
 
 	switch class {
 	case templates.Meter:
-		res = config.Meters()
+		res = config.MetersConfig()
 	case templates.Charger:
-		res = config.Chargers()
+		res = config.ChargersConfig()
 	case templates.Vehicle:
-		res = config.Vehicles()
+		res = config.VehiclesConfig()
 	}
 
 	// jsonError(w, http.StatusBadRequest, api.ErrNotAvailable)
