@@ -113,8 +113,8 @@ func (c networkConfig) URI() string {
 	return fmt.Sprintf("%s://%s", c.Schema, c.HostPort())
 }
 
-// webControl handles routing for devices. For now only api.AuthProvider related routes
-func webControl(conf networkConfig, vehicles []api.Vehicle, router *mux.Router, paramC chan<- util.Param) {
+// configureAuth handles routing for devices. For now only api.AuthProvider related routes
+func configureAuth(conf networkConfig, vehicles []api.Vehicle, router *mux.Router, paramC chan<- util.Param) {
 	auth := router.PathPrefix("/oauth").Subrouter()
 	auth.Use(handlers.CompressHandler)
 	auth.Use(handlers.CORS(
