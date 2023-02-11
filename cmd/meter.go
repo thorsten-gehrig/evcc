@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/spf13/cobra"
 )
 
@@ -33,11 +34,11 @@ func runMeter(cmd *cobra.Command, args []string) {
 		log.FATAL.Fatal(err)
 	}
 
-	if err := cp.ConfigureMeters(conf.Meters); err != nil {
+	if err := config.ConfigureMeters(conf.Meters); err != nil {
 		log.FATAL.Fatal(err)
 	}
 
-	meters := cp.Meters()
+	meters := config.Meters()
 
 	d := dumper{len: len(meters)}
 	for name, v := range meters {

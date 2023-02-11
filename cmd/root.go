@@ -188,7 +188,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 	// setup site and loadpoints
 	var site *core.Site
 	if err == nil {
-		cp.TrackVisitors() // track duplicate usage
+		config.TrackVisitors() // track duplicate usage
 		site, err = configureSiteAndLoadpoints(conf)
 	}
 
@@ -271,7 +271,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 		}
 
 		// allow web access for vehicles
-		configureAuth(conf.Network, config.Ordered(cp.Vehicles()), httpd.Router(), valueChan)
+		configureAuth(conf.Network, config.Ordered(config.Vehicles()), httpd.Router(), valueChan)
 
 		go func() {
 			site.Run(stopC, conf.Interval)

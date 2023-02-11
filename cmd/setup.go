@@ -34,8 +34,6 @@ import (
 	"golang.org/x/text/currency"
 )
 
-var cp = new(config.Provider)
-
 func loadConfigFile(conf *globalConfig) error {
 	err := viper.ReadInConfig()
 
@@ -262,12 +260,12 @@ func configureTariffs(conf tariffConfig) (tariff.Tariffs, error) {
 }
 
 func configureDevices(conf globalConfig) error {
-	err := cp.ConfigureMeters(conf.Meters)
+	err := config.ConfigureMeters(conf.Meters)
 	if err == nil {
-		err = cp.ConfigureChargers(conf.Chargers)
+		err = config.ConfigureChargers(conf.Chargers)
 	}
 	if err == nil {
-		err = cp.ConfigureVehicles(conf.Vehicles)
+		err = config.ConfigureVehicles(conf.Vehicles)
 	}
 	return err
 }
@@ -275,7 +273,7 @@ func configureDevices(conf globalConfig) error {
 func configureSiteAndLoadpoints(conf globalConfig) (site *core.Site, err error) {
 	if err = configureDevices(conf); err == nil {
 		var loadpoints []*core.Loadpoint
-		loadpoints, err = configureLoadpoints(conf, cp)
+		loadpoints, err = configureLoadpoints(conf)
 
 		var tariffs tariff.Tariffs
 		if err == nil {
@@ -283,15 +281,15 @@ func configureSiteAndLoadpoints(conf globalConfig) (site *core.Site, err error) 
 		}
 
 		if err == nil {
-			site, err = configureSite(conf.Site, cp, loadpoints, config.Ordered(cp.Vehicles()), tariffs)
+			site, err = configureSite(conf.Site, loadpoints, config.Ordered(config.Vehicles()), tariffs)
 		}
 	}
 
 	return site, err
 }
 
-func configureSite(conf map[string]interface{}, cp *config.Provider, loadpoints []*core.Loadpoint, vehicles []api.Vehicle, tariffs tariff.Tariffs) (*core.Site, error) {
-	site, err := core.NewSiteFromConfig(log, cp, conf, loadpoints, vehicles, tariffs)
+func configureSite(conf map[string]interface{}, loadpoints []*core.Loadpoint, vehicles []api.Vehicle, tariffs tariff.Tariffs) (*core.Site, error) {
+	site, err := core.NewSiteFromConfig(log, conf, loadpoints, vehicles, tariffs)
 	if err != nil {
 		return nil, fmt.Errorf("failed configuring site: %w", err)
 	}
@@ -299,7 +297,7 @@ func configureSite(conf map[string]interface{}, cp *config.Provider, loadpoints 
 	return site, nil
 }
 
-func configureLoadpoints(conf globalConfig, cp *config.Provider) (loadpoints []*core.Loadpoint, err error) {
+func configureLoadpoints(conf globalConfig) (loadpoints []*core.Loadpoint, err error) {
 	lpInterfaces, ok := viper.AllSettings()["loadpoints"].([]interface{})
 	if !ok || len(lpInterfaces) == 0 {
 		return nil, errors.New("missing loadpoints")
@@ -312,7 +310,7 @@ func configureLoadpoints(conf globalConfig, cp *config.Provider) (loadpoints []*
 		}
 
 		log := util.NewLogger("lp-" + strconv.Itoa(id+1))
-		lp, err := core.NewLoadpointFromConfig(log, cp, lpc)
+		lp, err := core.NewLoadpointFromConfig(log, lpc)
 		if err != nil {
 			return nil, fmt.Errorf("failed configuring loadpoint: %w", err)
 		}

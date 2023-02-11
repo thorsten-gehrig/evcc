@@ -19,6 +19,7 @@ import (
 	serverdb "github.com/evcc-io/evcc/server/db"
 	"github.com/evcc-io/evcc/tariff"
 	"github.com/evcc-io/evcc/util"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/telemetry"
 )
 
@@ -96,7 +97,6 @@ type MetersConfig struct {
 // NewSiteFromConfig creates a new site
 func NewSiteFromConfig(
 	log *util.Logger,
-	cp configProvider,
 	other map[string]interface{},
 	loadpoints []*Loadpoint,
 	vehicles []api.Vehicle,
@@ -142,14 +142,14 @@ func NewSiteFromConfig(
 	// grid meter
 	if site.Meters.GridMeterRef != "" {
 		var err error
-		if site.gridMeter, err = cp.Meter(site.Meters.GridMeterRef); err != nil {
+		if site.gridMeter, err = config.Meter(site.Meters.GridMeterRef); err != nil {
 			return nil, err
 		}
 	}
 
 	// multiple pv
 	for _, ref := range append(site.Meters.PVMetersRef, site.Meters.PVMetersRef_...) {
-		pv, err := cp.Meter(ref)
+		pv, err := config.Meter(ref)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +158,7 @@ func NewSiteFromConfig(
 
 	// multiple batteries
 	for _, ref := range append(site.Meters.BatteryMetersRef, site.Meters.BatteryMetersRef_...) {
-		battery, err := cp.Meter(ref)
+		battery, err := config.Meter(ref)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +167,7 @@ func NewSiteFromConfig(
 
 	// auxiliary meters
 	for _, ref := range site.Meters.AuxMetersRef {
-		meter, err := cp.Meter(ref)
+		meter, err := config.Meter(ref)
 		if err != nil {
 			return nil, err
 		}

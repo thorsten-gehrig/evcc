@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/spf13/cobra"
 )
 
@@ -41,11 +42,11 @@ func runVehicle(cmd *cobra.Command, args []string) {
 		fatal(err)
 	}
 
-	if err := cp.ConfigureVehicles(conf.Vehicles); err != nil {
+	if err := config.ConfigureVehicles(conf.Vehicles); err != nil {
 		fatal(err)
 	}
 
-	vehicles := cp.Vehicles()
+	vehicles := config.Vehicles()
 
 	var flagUsed bool
 	for _, v := range vehicles {

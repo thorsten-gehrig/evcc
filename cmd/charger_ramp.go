@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/spf13/cobra"
 )
 
@@ -82,11 +83,11 @@ func runChargerRamp(cmd *cobra.Command, args []string) {
 		log.FATAL.Fatal(err)
 	}
 
-	if err := cp.ConfigureChargers(conf.Chargers); err != nil {
+	if err := config.ConfigureChargers(conf.Chargers); err != nil {
 		log.FATAL.Fatal(err)
 	}
 
-	chargers := cp.Chargers()
+	chargers := config.Chargers()
 
 	digits, err := strconv.Atoi(cmd.Flags().Lookup(flagDigits).Value.String())
 	if err != nil {

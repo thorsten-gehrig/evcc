@@ -9,6 +9,7 @@ import (
 	"github.com/evcc-io/evcc/api"
 	"github.com/evcc-io/evcc/charger"
 	"github.com/evcc-io/evcc/meter"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/templates"
 	"github.com/evcc-io/evcc/vehicle"
 	"github.com/gorilla/mux"
@@ -127,7 +128,20 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = class
 
-	jsonError(w, http.StatusBadRequest, api.ErrNotAvailable)
+	var res any
+
+	switch class {
+	case templates.Meter:
+		res = config.Meters()
+	case templates.Charger:
+		res = config.Chargers()
+	case templates.Vehicle:
+		res = config.Vehicles()
+	}
+
+	// jsonError(w, http.StatusBadRequest, api.ErrNotAvailable)
+
+	jsonResult(w, res)
 }
 
 // testHandler tests a configuration by class

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/spf13/cobra"
 )
 
@@ -48,11 +49,11 @@ func runCharger(cmd *cobra.Command, args []string) {
 		log.FATAL.Fatal(err)
 	}
 
-	if err := cp.ConfigureChargers(conf.Chargers); err != nil {
+	if err := config.ConfigureChargers(conf.Chargers); err != nil {
 		log.FATAL.Fatal(err)
 	}
 
-	chargers := cp.Chargers()
+	chargers := config.Chargers()
 
 	current := int64(noCurrent)
 	if flag := cmd.Flags().Lookup(flagCurrent); flag.Changed {

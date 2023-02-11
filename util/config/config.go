@@ -16,20 +16,52 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Provider provides configuration items
-type Provider struct {
+var instance = new(provider)
+
+func TrackVisitors() {
+	instance.TrackVisitors()
+}
+func Meter(name string) (api.Meter, error) {
+	return instance.Meter(name)
+}
+func Meters() map[string]api.Meter {
+	return instance.Meters()
+}
+func Charger(name string) (api.Charger, error) {
+	return instance.Charger(name)
+}
+func Chargers() map[string]api.Charger {
+	return instance.Chargers()
+}
+func Vehicle(name string) (api.Vehicle, error) {
+	return instance.Vehicle(name)
+}
+func Vehicles() map[string]api.Vehicle {
+	return instance.Vehicles()
+}
+func ConfigureMeters(conf []Named) error {
+	return instance.ConfigureMeters(conf)
+}
+func ConfigureChargers(conf []Named) error {
+	return instance.ConfigureChargers(conf)
+}
+func ConfigureVehicles(conf []Named) error {
+	return instance.ConfigureVehicles(conf)
+}
+
+type provider struct {
 	meters   map[string]api.Meter
 	chargers map[string]api.Charger
 	vehicles map[string]api.Vehicle
 	visited  map[string]bool
 }
 
-func (cp *Provider) TrackVisitors() {
+func (cp *provider) TrackVisitors() {
 	cp.visited = make(map[string]bool)
 }
 
 // Meter provides meters by name
-func (cp *Provider) Meter(name string) (api.Meter, error) {
+func (cp *provider) Meter(name string) (api.Meter, error) {
 	if meter, ok := cp.meters[name]; ok {
 		// track duplicate usage https://github.com/evcc-io/evcc/issues/1744
 		if cp.visited != nil {
@@ -45,12 +77,12 @@ func (cp *Provider) Meter(name string) (api.Meter, error) {
 }
 
 // Meters returns the map configured of meters
-func (cp *Provider) Meters() map[string]api.Meter {
+func (cp *provider) Meters() map[string]api.Meter {
 	return cp.meters
 }
 
 // Charger provides chargers by name
-func (cp *Provider) Charger(name string) (api.Charger, error) {
+func (cp *provider) Charger(name string) (api.Charger, error) {
 	if charger, ok := cp.chargers[name]; ok {
 		return charger, nil
 	}
@@ -58,12 +90,12 @@ func (cp *Provider) Charger(name string) (api.Charger, error) {
 }
 
 // Chargers returns the map configured of chargers
-func (cp *Provider) Chargers() map[string]api.Charger {
+func (cp *provider) Chargers() map[string]api.Charger {
 	return cp.chargers
 }
 
 // Vehicle provides vehicles by name
-func (cp *Provider) Vehicle(name string) (api.Vehicle, error) {
+func (cp *provider) Vehicle(name string) (api.Vehicle, error) {
 	if vehicle, ok := cp.vehicles[name]; ok {
 		return vehicle, nil
 	}
@@ -71,11 +103,11 @@ func (cp *Provider) Vehicle(name string) (api.Vehicle, error) {
 }
 
 // Vehicles returns the map configured of vehicles
-func (cp *Provider) Vehicles() map[string]api.Vehicle {
+func (cp *provider) Vehicles() map[string]api.Vehicle {
 	return cp.vehicles
 }
 
-func (cp *Provider) ConfigureMeters(conf []Named) error {
+func (cp *provider) ConfigureMeters(conf []Named) error {
 	cp.meters = make(map[string]api.Meter)
 	for i, cc := range conf {
 		if cc.Name == "" {
@@ -98,7 +130,7 @@ func (cp *Provider) ConfigureMeters(conf []Named) error {
 	return nil
 }
 
-func (cp *Provider) ConfigureChargers(conf []Named) error {
+func (cp *provider) ConfigureChargers(conf []Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
 
@@ -131,7 +163,7 @@ func (cp *Provider) ConfigureChargers(conf []Named) error {
 	return g.Wait()
 }
 
-func (cp *Provider) ConfigureVehicles(conf []Named) error {
+func (cp *provider) ConfigureVehicles(conf []Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
 
