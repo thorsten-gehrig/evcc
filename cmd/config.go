@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/evcc-io/evcc/api"
 	"github.com/evcc-io/evcc/charger"
 	"github.com/evcc-io/evcc/meter"
@@ -26,7 +24,6 @@ import (
 	"github.com/evcc-io/evcc/vehicle/wrapper"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -140,7 +137,6 @@ type ConfigProvider struct {
 	chargers map[string]api.Charger
 	vehicles map[string]api.Vehicle
 	visited  map[string]bool
-	auth     *util.AuthCollection
 }
 
 func (cp *ConfigProvider) TrackVisitors() {
@@ -192,9 +188,9 @@ func (cp *ConfigProvider) configure(conf config) error {
 
 func (cp *ConfigProvider) configureMeters(conf config) error {
 	cp.meters = make(map[string]api.Meter)
-	for id, cc := range conf.Meters {
+	for i, cc := range conf.Meters {
 		if cc.Name == "" {
-			return fmt.Errorf("cannot create %s meter: missing name", humanize.Ordinal(id+1))
+			return fmt.Errorf("cannot create meter %d: missing name", i+1)
 		}
 
 		m, err := meter.NewFromConfig(cc.Type, cc.Other)
@@ -218,9 +214,9 @@ func (cp *ConfigProvider) configureChargers(conf config) error {
 	g, _ := errgroup.WithContext(context.Background())
 
 	cp.chargers = make(map[string]api.Charger)
-	for id, cc := range conf.Chargers {
+	for i, cc := range conf.Chargers {
 		if cc.Name == "" {
-			return fmt.Errorf("cannot create %s charger: missing name", humanize.Ordinal(id+1))
+			return fmt.Errorf("cannot create charger %d: missing name", i+1)
 		}
 
 		cc := cc
@@ -251,9 +247,9 @@ func (cp *ConfigProvider) configureVehicles(conf config) error {
 	g, _ := errgroup.WithContext(context.Background())
 
 	cp.vehicles = make(map[string]api.Vehicle)
-	for id, cc := range conf.Vehicles {
+	for i, cc := range conf.Vehicles {
 		if cc.Name == "" {
-			return fmt.Errorf("cannot create %s vehicle: missing name", humanize.Ordinal(id+1))
+			return fmt.Errorf("cannot create vehicle %d: missing name", i+1)
 		}
 
 		cc := cc
@@ -293,7 +289,7 @@ func (cp *ConfigProvider) configureVehicles(conf config) error {
 }
 
 // webControl handles routing for devices. For now only api.AuthProvider related routes
-func (cp *ConfigProvider) webControl(conf networkConfig, router *mux.Router, paramC chan<- util.Param) {
+func webControl(conf networkConfig, vehicles []api.Vehicle, router *mux.Router, paramC chan<- util.Param) {
 	auth := router.PathPrefix("/oauth").Subrouter()
 	auth.Use(handlers.CompressHandler)
 	auth.Use(handlers.CORS(
@@ -304,19 +300,13 @@ func (cp *ConfigProvider) webControl(conf networkConfig, router *mux.Router, par
 	oauth2redirect.SetupRouter(auth)
 
 	// initialize
-	cp.auth = util.NewAuthCollection(paramC)
+	authCollection := util.NewAuthCollection(paramC)
 
 	baseURI := conf.URI()
 	baseAuthURI := fmt.Sprintf("%s/oauth", baseURI)
 
-	// stable map iteration
-	keys := maps.Keys(cp.vehicles)
-	sort.Strings(keys)
-
 	var id int
-	for _, k := range keys {
-		v := cp.vehicles[k]
-
+	for _, v := range vehicles {
 		if provider, ok := v.(api.AuthProvider); ok {
 			id += 1
 
@@ -324,7 +314,7 @@ func (cp *ConfigProvider) webControl(conf networkConfig, router *mux.Router, par
 			callbackURI := fmt.Sprintf("%s/%s/callback", baseAuthURI, basePath)
 
 			// register vehicle
-			ap := cp.auth.Register(fmt.Sprintf("oauth/%s", basePath), v.Title())
+			ap := authCollection.Register(fmt.Sprintf("oauth/%s", basePath), v.Title())
 
 			provider.SetCallbackParams(baseURI, callbackURI, ap.Handler())
 
@@ -341,5 +331,5 @@ func (cp *ConfigProvider) webControl(conf networkConfig, router *mux.Router, par
 		}
 	}
 
-	cp.auth.Publish()
+	authCollection.Publish()
 }
