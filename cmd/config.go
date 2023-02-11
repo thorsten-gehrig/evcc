@@ -168,7 +168,26 @@ func configureAuth(conf networkConfig, vehicles []api.Vehicle, router *mux.Route
 	authCollection.Publish()
 }
 
+func devicesAsSlice(devices []config.Device) []config.Named {
+	var res []config.Named
+	for _, d := range devices {
+		res = append(res, config.Named{
+			Name:  fmt.Sprintf("db:%d", d.ID),
+			Type:  d.Type,
+			Other: d.AsMap(),
+		})
+	}
+	return res
+}
+
 func configureMeters(conf []config.Named) error {
+	// append devices from database
+	devs, err := config.Devices(config.Meter)
+	if err != nil {
+		return err
+	}
+	conf = append(conf, devicesAsSlice(devs)...)
+
 	for i, cc := range conf {
 		if cc.Name == "" {
 			return fmt.Errorf("cannot create meter %d: missing name", i+1)
@@ -191,6 +210,13 @@ func configureMeters(conf []config.Named) error {
 func configureChargers(conf []config.Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
+
+	// append devices from database
+	devs, err := config.Devices(config.Charger)
+	if err != nil {
+		return err
+	}
+	conf = append(conf, devicesAsSlice(devs)...)
 
 	for i, cc := range conf {
 		if cc.Name == "" {
@@ -218,6 +244,13 @@ func configureChargers(conf []config.Named) error {
 func configureVehicles(conf []config.Named) error {
 	var mu sync.Mutex
 	g, _ := errgroup.WithContext(context.Background())
+
+	// append devices from database
+	devs, err := config.Devices(config.Vehicle)
+	if err != nil {
+		return err
+	}
+	conf = append(conf, devicesAsSlice(devs)...)
 
 	for i, cc := range conf {
 		if cc.Name == "" {
