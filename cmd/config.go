@@ -1,13 +1,19 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/evcc-io/evcc/api"
+	"github.com/evcc-io/evcc/charger"
+	"github.com/evcc-io/evcc/meter"
 	"github.com/evcc-io/evcc/provider/mqtt"
 	"github.com/evcc-io/evcc/push"
 	"github.com/evcc-io/evcc/server"
@@ -15,8 +21,11 @@ import (
 	"github.com/evcc-io/evcc/util"
 	"github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/modbus"
+	"github.com/evcc-io/evcc/vehicle"
+	"github.com/evcc-io/evcc/vehicle/wrapper"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"golang.org/x/sync/errgroup"
 )
 
 var conf = globalConfig{
@@ -157,4 +166,90 @@ func configureAuth(conf networkConfig, vehicles []api.Vehicle, router *mux.Route
 	}
 
 	authCollection.Publish()
+}
+
+func configureMeters(conf []config.Named) error {
+	for i, cc := range conf {
+		if cc.Name == "" {
+			return fmt.Errorf("cannot create meter %d: missing name", i+1)
+		}
+
+		m, err := meter.NewFromConfig(cc.Type, cc.Other)
+		if err != nil {
+			err = fmt.Errorf("cannot create meter '%s': %w", cc.Name, err)
+			return err
+		}
+
+		if err := config.AddMeter(cc, m); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func configureChargers(conf []config.Named) error {
+	var mu sync.Mutex
+	g, _ := errgroup.WithContext(context.Background())
+
+	for i, cc := range conf {
+		if cc.Name == "" {
+			return fmt.Errorf("cannot create charger %d: missing name", i+1)
+		}
+
+		cc := cc
+
+		g.Go(func() error {
+			c, err := charger.NewFromConfig(cc.Type, cc.Other)
+			if err != nil {
+				return fmt.Errorf("cannot create charger '%s': %w", cc.Name, err)
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			return config.AddCharger(cc, c)
+		})
+	}
+
+	return g.Wait()
+}
+
+func configureVehicles(conf []config.Named) error {
+	var mu sync.Mutex
+	g, _ := errgroup.WithContext(context.Background())
+
+	for i, cc := range conf {
+		if cc.Name == "" {
+			return fmt.Errorf("cannot create vehicle %d: missing name", i+1)
+		}
+
+		cc := cc
+
+		g.Go(func() error {
+			v, err := vehicle.NewFromConfig(cc.Type, cc.Other)
+			if err != nil {
+				var ce *util.ConfigError
+				if errors.As(err, &ce) {
+					return fmt.Errorf("cannot create vehicle '%s': %w", cc.Name, err)
+				}
+
+				// wrap non-config vehicle errors to prevent fatals
+				v = wrapper.New(err)
+			}
+
+			// ensure vehicle config has title
+			if v.Title() == "" {
+				//lint:ignore SA1019 as Title is safe on ascii
+				v.SetTitle(strings.Title(cc.Name))
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			return config.AddVehicle(cc, v)
+		})
+	}
+
+	return g.Wait()
 }

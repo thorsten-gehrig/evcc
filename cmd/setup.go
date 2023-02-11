@@ -260,12 +260,12 @@ func configureTariffs(conf tariffConfig) (tariff.Tariffs, error) {
 }
 
 func configureDevices(conf globalConfig) error {
-	err := config.ConfigureMeters(conf.Meters)
+	err := configureMeters(conf.Meters)
 	if err == nil {
-		err = config.ConfigureChargers(conf.Chargers)
+		err = configureChargers(conf.Chargers)
 	}
 	if err == nil {
-		err = config.ConfigureVehicles(conf.Vehicles)
+		err = configureVehicles(conf.Vehicles)
 	}
 	return err
 }

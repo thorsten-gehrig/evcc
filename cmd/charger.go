@@ -49,7 +49,7 @@ func runCharger(cmd *cobra.Command, args []string) {
 		log.FATAL.Fatal(err)
 	}
 
-	if err := config.ConfigureChargers(conf.Chargers); err != nil {
+	if err := configureChargers(conf.Chargers); err != nil {
 		log.FATAL.Fatal(err)
 	}
 

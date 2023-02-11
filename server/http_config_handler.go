@@ -21,7 +21,7 @@ import (
 func templatesHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	class, err := templates.ClassString(vars["class"])
+	class, err := config.ClassString(vars["class"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)
 		return
@@ -92,7 +92,7 @@ func (p products) MarshalJSON() (out []byte, err error) {
 func productsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	class, err := templates.ClassString(vars["class"])
+	class, err := config.ClassString(vars["class"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)
 		return
@@ -122,7 +122,7 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	class, err := templates.ClassString(vars["class"])
+	class, err := config.ClassString(vars["class"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)
 		return
@@ -131,11 +131,11 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	var named []config.Named
 
 	switch class {
-	case templates.Meter:
+	case config.Meter:
 		named = config.MetersConfig()
-	case templates.Charger:
+	case config.Charger:
 		named = config.ChargersConfig()
-	case templates.Vehicle:
+	case config.Vehicle:
 		named = config.VehiclesConfig()
 	}
 
@@ -154,7 +154,7 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	class, err := templates.ClassString(vars["class"])
+	class, err := config.ClassString(vars["class"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)
 		return
@@ -183,27 +183,27 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	var id int
 
 	switch class {
-	case templates.Charger:
+	case config.Charger:
 		var c api.Charger
 		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddCharger(named, c); err == nil {
-				_, id, _ = config.Charger(named.Name)
+				_, id, _ = config.ChargerByName(named.Name)
 				dev = c
 			}
 		}
-	case templates.Meter:
+	case config.Meter:
 		var m api.Meter
 		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddMeter(named, m); err == nil {
-				_, id, _ = config.Meter(named.Name)
+				_, id, _ = config.MeterByName(named.Name)
 				dev = m
 			}
 		}
-	case templates.Vehicle:
+	case config.Vehicle:
 		var v api.Vehicle
 		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddVehicle(named, v); err == nil {
-				_, id, _ = config.Vehicle(named.Name)
+				_, id, _ = config.VehicleByName(named.Name)
 				dev = v
 			}
 		}
@@ -229,7 +229,7 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	class, err := templates.ClassString(vars["class"])
+	class, err := config.ClassString(vars["class"])
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)
 		return
@@ -250,11 +250,11 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 	var dev any
 
 	switch class {
-	case templates.Charger:
+	case config.Charger:
 		dev, err = charger.NewFromConfig(typ, req)
-	case templates.Meter:
+	case config.Meter:
 		dev, err = meter.NewFromConfig(typ, req)
-	case templates.Vehicle:
+	case config.Vehicle:
 		dev, err = vehicle.NewFromConfig(typ, req)
 	}
 

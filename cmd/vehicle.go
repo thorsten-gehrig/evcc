@@ -42,7 +42,7 @@ func runVehicle(cmd *cobra.Command, args []string) {
 		fatal(err)
 	}
 
-	if err := config.ConfigureVehicles(conf.Vehicles); err != nil {
+	if err := configureVehicles(conf.Vehicles); err != nil {
 		fatal(err)
 	}
 
