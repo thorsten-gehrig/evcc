@@ -116,6 +116,20 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResult(w, res)
 }
 
+// devicesHandler tests a configuration by class
+func devicesHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	class, err := templates.ClassString(vars["class"])
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+	_ = class
+
+	jsonError(w, http.StatusBadRequest, api.ErrNotAvailable)
+}
+
 // testHandler tests a configuration by class
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
