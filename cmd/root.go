@@ -7,19 +7,18 @@ import (
 	_ "net/http/pprof" // pprof handler
 	"os"
 	"os/signal"
-	"sort"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/evcc-io/evcc/api"
 	"github.com/evcc-io/evcc/core"
 	"github.com/evcc-io/evcc/push"
 	"github.com/evcc-io/evcc/server"
 	"github.com/evcc-io/evcc/server/modbus"
 	"github.com/evcc-io/evcc/server/updater"
 	"github.com/evcc-io/evcc/util"
+	cfg "github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/pipe"
 	"github.com/evcc-io/evcc/util/sponsor"
 	"github.com/evcc-io/evcc/util/telemetry"
@@ -272,15 +271,7 @@ func runRoot(cmd *cobra.Command, args []string) {
 		}
 
 		// allow web access for vehicles
-		keys := maps.Keys(cp.vehicles)
-		sort.Strings(keys)
-
-		vehicles := make([]api.Vehicle, 0, len(cp.vehicles))
-		for _, k := range keys {
-			vehicles = append(vehicles, cp.vehicles[k])
-		}
-
-		webControl(conf.Network, vehicles, httpd.Router(), valueChan)
+		webControl(conf.Network, cfg.Ordered(cp.Vehicles()), httpd.Router(), valueChan)
 
 		go func() {
 			site.Run(stopC, conf.Interval)
