@@ -13,6 +13,7 @@ import (
 	"github.com/evcc-io/evcc/util/templates"
 	"github.com/evcc-io/evcc/vehicle"
 	"github.com/gorilla/mux"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 )
 
@@ -128,18 +129,24 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = class
 
-	var res []config.Named
+	var named []config.Named
 
 	switch class {
 	case templates.Meter:
-		res = config.MetersConfig()
+		named = config.MetersConfig()
 	case templates.Charger:
-		res = config.ChargersConfig()
+		named = config.ChargersConfig()
 	case templates.Vehicle:
-		res = config.VehiclesConfig()
+		named = config.VehiclesConfig()
 	}
 
-	// jsonError(w, http.StatusBadRequest, api.ErrNotAvailable)
+	res := make([]map[string]any, 0, len(named))
+	for _, v := range named {
+		conf := maps.Clone(v.Other)
+		conf["type"] = v.Type
+
+		res = append(res, conf)
+	}
 
 	jsonResult(w, res)
 }
