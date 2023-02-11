@@ -26,14 +26,8 @@ func AddMeter(conf Named, meter api.Meter) error {
 	return instance.meters.Add(conf, meter)
 }
 
-func Meter(name string) (api.Meter, error) {
-	m, _, err := instance.meters.ByName(name)
-	return m, err
-}
-
-func MeterID(name string) (int, error) {
-	_, id, err := instance.meters.ByName(name)
-	return id, err
+func Meter(name string) (api.Meter, int, error) {
+	return instance.meters.ByName(name)
 }
 
 func Meters() map[string]api.Meter {
@@ -48,14 +42,8 @@ func AddCharger(conf Named, charger api.Charger) error {
 	return instance.chargers.Add(conf, charger)
 }
 
-func Charger(name string) (api.Charger, error) {
-	c, _, err := instance.chargers.ByName(name)
-	return c, err
-}
-
-func ChargerID(name string) (int, error) {
-	_, id, err := instance.chargers.ByName(name)
-	return id, err
+func Charger(name string) (api.Charger, int, error) {
+	return instance.chargers.ByName(name)
 }
 
 func Chargers() map[string]api.Charger {
@@ -70,14 +58,8 @@ func AddVehicle(conf Named, vehicle api.Vehicle) error {
 	return instance.vehicles.Add(conf, vehicle)
 }
 
-func Vehicle(name string) (api.Vehicle, error) {
-	v, _, err := instance.vehicles.ByName(name)
-	return v, err
-}
-
-func VehicleID(name string) (int, error) {
-	_, id, err := instance.vehicles.ByName(name)
-	return id, err
+func Vehicle(name string) (api.Vehicle, int, error) {
+	return instance.vehicles.ByName(name)
 }
 
 func Vehicles() map[string]api.Vehicle {

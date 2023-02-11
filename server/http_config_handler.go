@@ -187,7 +187,7 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		var c api.Charger
 		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddCharger(named, c); err == nil {
-				id, _ = config.ChargerID(named.Name)
+				_, id, _ = config.Charger(named.Name)
 				dev = c
 			}
 		}
@@ -195,7 +195,7 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		var m api.Meter
 		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddMeter(named, m); err == nil {
-				id, _ = config.MeterID(named.Name)
+				_, id, _ = config.Meter(named.Name)
 				dev = m
 			}
 		}
@@ -203,7 +203,7 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		var v api.Vehicle
 		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
 			if err = config.AddVehicle(named, v); err == nil {
-				id, _ = config.VehicleID(named.Name)
+				_, id, _ = config.Vehicle(named.Name)
 				dev = v
 			}
 		}
