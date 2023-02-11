@@ -22,7 +22,7 @@ import (
 	"github.com/evcc-io/evcc/server/db/settings"
 	"github.com/evcc-io/evcc/tariff"
 	"github.com/evcc-io/evcc/util"
-	cfg "github.com/evcc-io/evcc/util/config"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/locale"
 	"github.com/evcc-io/evcc/util/machine"
 	"github.com/evcc-io/evcc/util/pipe"
@@ -34,9 +34,9 @@ import (
 	"golang.org/x/text/currency"
 )
 
-var cp = new(cfg.Provider)
+var cp = new(config.Provider)
 
-func loadConfigFile(conf *config) error {
+func loadConfigFile(conf *globalConfig) error {
 	err := viper.ReadInConfig()
 
 	if cfgFile = viper.ConfigFileUsed(); cfgFile == "" {
@@ -59,7 +59,7 @@ func loadConfigFile(conf *config) error {
 	return err
 }
 
-func configureEnvironment(cmd *cobra.Command, conf config) (err error) {
+func configureEnvironment(cmd *cobra.Command, conf globalConfig) (err error) {
 	// full http request log
 	if cmd.Flags().Lookup(flagHeaders).Changed {
 		request.LogHeaders = true
@@ -163,7 +163,7 @@ func configureJavascript(conf []javascriptConfig) error {
 }
 
 // setup HEMS
-func configureHEMS(conf cfg.Typed, site *core.Site, httpd *server.HTTPd) error {
+func configureHEMS(conf config.Typed, site *core.Site, httpd *server.HTTPd) error {
 	hems, err := hems.NewFromConfig(conf.Type, conf.Other, site, httpd)
 	if err != nil {
 		return fmt.Errorf("failed configuring hems: %w", err)
@@ -261,7 +261,7 @@ func configureTariffs(conf tariffConfig) (tariff.Tariffs, error) {
 	return *tariffs, nil
 }
 
-func configureDevices(conf config) error {
+func configureDevices(conf globalConfig) error {
 	err := cp.ConfigureMeters(conf.Meters)
 	if err == nil {
 		err = cp.ConfigureChargers(conf.Chargers)
@@ -272,7 +272,7 @@ func configureDevices(conf config) error {
 	return err
 }
 
-func configureSiteAndLoadpoints(conf config) (site *core.Site, err error) {
+func configureSiteAndLoadpoints(conf globalConfig) (site *core.Site, err error) {
 	if err = configureDevices(conf); err == nil {
 		var loadpoints []*core.Loadpoint
 		loadpoints, err = configureLoadpoints(conf, cp)
@@ -283,14 +283,14 @@ func configureSiteAndLoadpoints(conf config) (site *core.Site, err error) {
 		}
 
 		if err == nil {
-			site, err = configureSite(conf.Site, cp, loadpoints, cfg.Ordered(cp.Vehicles()), tariffs)
+			site, err = configureSite(conf.Site, cp, loadpoints, config.Ordered(cp.Vehicles()), tariffs)
 		}
 	}
 
 	return site, err
 }
 
-func configureSite(conf map[string]interface{}, cp *cfg.Provider, loadpoints []*core.Loadpoint, vehicles []api.Vehicle, tariffs tariff.Tariffs) (*core.Site, error) {
+func configureSite(conf map[string]interface{}, cp *config.Provider, loadpoints []*core.Loadpoint, vehicles []api.Vehicle, tariffs tariff.Tariffs) (*core.Site, error) {
 	site, err := core.NewSiteFromConfig(log, cp, conf, loadpoints, vehicles, tariffs)
 	if err != nil {
 		return nil, fmt.Errorf("failed configuring site: %w", err)
@@ -299,7 +299,7 @@ func configureSite(conf map[string]interface{}, cp *cfg.Provider, loadpoints []*
 	return site, nil
 }
 
-func configureLoadpoints(conf config, cp *cfg.Provider) (loadpoints []*core.Loadpoint, err error) {
+func configureLoadpoints(conf globalConfig, cp *config.Provider) (loadpoints []*core.Loadpoint, err error) {
 	lpInterfaces, ok := viper.AllSettings()["loadpoints"].([]interface{})
 	if !ok || len(lpInterfaces) == 0 {
 		return nil, errors.New("missing loadpoints")

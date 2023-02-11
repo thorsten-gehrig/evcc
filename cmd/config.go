@@ -13,13 +13,13 @@ import (
 	"github.com/evcc-io/evcc/server"
 	"github.com/evcc-io/evcc/server/oauth2redirect"
 	"github.com/evcc-io/evcc/util"
-	cfg "github.com/evcc-io/evcc/util/config"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/evcc-io/evcc/util/modbus"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
-var conf = config{
+var conf = globalConfig{
 	Interval: 10 * time.Second,
 	Log:      "info",
 	Network: networkConfig{
@@ -36,7 +36,7 @@ var conf = config{
 	},
 }
 
-type config struct {
+type globalConfig struct {
 	URI          interface{} // TODO deprecated
 	Network      networkConfig
 	Log          string
@@ -53,11 +53,11 @@ type config struct {
 	Javascript   []javascriptConfig
 	Influx       server.InfluxConfig
 	EEBus        map[string]interface{}
-	HEMS         cfg.Typed
+	HEMS         config.Typed
 	Messaging    messagingConfig
-	Meters       []cfg.Named
-	Chargers     []cfg.Named
-	Vehicles     []cfg.Named
+	Meters       []config.Named
+	Chargers     []config.Named
+	Vehicles     []config.Named
 	Tariffs      tariffConfig
 	Site         map[string]interface{}
 	Loadpoints   []map[string]interface{}
@@ -86,14 +86,14 @@ type dbConfig struct {
 
 type messagingConfig struct {
 	Events   map[string]push.EventTemplateConfig
-	Services []cfg.Typed
+	Services []config.Typed
 }
 
 type tariffConfig struct {
 	Currency string
-	Grid     cfg.Typed
-	FeedIn   cfg.Typed
-	Planner  cfg.Typed
+	Grid     config.Typed
+	FeedIn   config.Typed
+	Planner  config.Typed
 }
 
 type networkConfig struct {
