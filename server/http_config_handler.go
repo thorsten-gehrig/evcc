@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/evcc-io/evcc/api"
@@ -150,6 +151,22 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResult(w, res)
 }
 
+func namedConfig(req *map[string]any) config.Named {
+	res := config.Named{
+		Type:  "template",
+		Other: *req,
+	}
+	if (*req)["type"] != nil {
+		res.Type = (*req)["type"].(string)
+		delete(*req, "type")
+	}
+	if (*req)["Name"] != nil {
+		res.Name = (*req)["name"].(string)
+		delete(*req, "name")
+	}
+	return res
+}
+
 // newDeviceHandler creates a new device by class
 func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -166,50 +183,105 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	named := config.Named{
-		Type:  "template",
-		Other: req,
-	}
-	if req["type"] != nil {
-		named.Type = req["type"].(string)
-		delete(req, "type")
-	}
-	if req["Name"] != nil {
-		named.Name = req["name"].(string)
-		delete(req, "name")
-	}
+	named := namedConfig(&req)
 
-	var dev any
 	var id int
 
 	switch class {
 	case config.Charger:
 		var c api.Charger
 		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
-			if err = config.AddCharger(named, c); err == nil {
-				_, id, _ = config.ChargerByName(named.Name)
-				dev = c
+			id, err = config.AddDevice(config.Charger, named.Type, req)
+
+			if err == nil {
+				named.Name = config.NameForID(id)
+				err = config.AddCharger(named, c)
 			}
 		}
+
 	case config.Meter:
 		var m api.Meter
 		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
-			if err = config.AddMeter(named, m); err == nil {
-				_, id, _ = config.MeterByName(named.Name)
-				dev = m
+			id, err = config.AddDevice(config.Meter, named.Type, req)
+
+			if err == nil {
+				named.Name = config.NameForID(id)
+				err = config.AddMeter(named, m)
 			}
 		}
+
 	case config.Vehicle:
 		var v api.Vehicle
 		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
-			if err = config.AddVehicle(named, v); err == nil {
-				_, id, _ = config.VehicleByName(named.Name)
-				dev = v
+			id, err = config.AddDevice(config.Charger, named.Type, req)
+
+			if err == nil {
+				named.Name = config.NameForID(id)
+				err = config.AddVehicle(named, v)
 			}
 		}
 	}
 
-	_ = dev
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	res := struct {
+		ID int `json:"id"`
+	}{
+		ID: id,
+	}
+
+	jsonResult(w, res)
+}
+
+// updateDeviceHandler updates database device's configuration by class
+func updateDeviceHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	class, err := config.ClassString(vars["class"])
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	var req map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	named := namedConfig(&req)
+
+	switch class {
+	case config.Charger:
+		var c api.Charger
+		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
+			_, err = config.UpdateDevice(config.Charger, id, named.Other)
+		}
+		_ = c
+
+	case config.Meter:
+		var m api.Meter
+		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
+			_, err = config.UpdateDevice(config.Meter, id, named.Other)
+		}
+		_ = m
+
+	case config.Vehicle:
+		var v api.Vehicle
+		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
+			_, err = config.UpdateDevice(config.Vehicle, id, named.Other)
+		}
+		_ = v
+	}
 
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err)

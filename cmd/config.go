@@ -174,7 +174,7 @@ func devicesAsSlice(devices []config.Device) []config.Named {
 		res = append(res, config.Named{
 			Name:  fmt.Sprintf("db:%d", d.ID),
 			Type:  d.Type,
-			Other: d.AsMap(),
+			Other: d.DetailsAsMap(),
 		})
 	}
 	return res
