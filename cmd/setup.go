@@ -113,6 +113,11 @@ func configureDatabase(conf dbConfig) error {
 			})
 		}
 	}
+
+	if err == nil {
+		config.Init(db.Instance)
+	}
+
 	return err
 }
 

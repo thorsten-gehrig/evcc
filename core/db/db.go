@@ -1,7 +1,6 @@
 package db
 
 import (
-	serverdb "github.com/evcc-io/evcc/server/db"
 	"github.com/evcc-io/evcc/util"
 	"gorm.io/gorm"
 )
@@ -19,9 +18,7 @@ type Database interface {
 }
 
 // New creates a database storage driver
-func New(name string) (*DB, error) {
-	db := serverdb.Instance
-
+func New(name string, db *gorm.DB) (*DB, error) {
 	// TODO deprecate
 	var err error
 	if table := "transactions"; db.Migrator().HasTable(table) {
