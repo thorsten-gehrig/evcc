@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -15,29 +16,38 @@ func (cp *handler[T]) TrackVisitors() {
 }
 
 // Add adds device and config
-func (cp *handler[T]) Add(config Named, device T) {
-	cp.container = append(cp.container, container[T]{device: device, config: config})
+func (cp *handler[T]) Add(conf Named, device T) error {
+	if conf.Name == "" {
+		return errors.New("missing name")
+	}
+
+	if _, _, err := cp.ByName(conf.Name); err == nil {
+		return fmt.Errorf("duplicate name: %s already defined and must be unique", conf.Name)
+	}
+
+	cp.container = append(cp.container, container[T]{device: device, config: conf})
+	return nil
 }
 
 // ByName provides device by name
-func (cp *handler[T]) ByName(name string) (T, error) {
+func (cp *handler[T]) ByName(name string) (T, int, error) {
 	var empty T
 
-	for _, container := range cp.container {
+	for i, container := range cp.container {
 		if name == container.config.Name {
 			// track duplicate usage https://github.com/evcc-io/evcc/issues/1744
 			if cp.visited != nil {
 				if _, ok := cp.visited[name]; ok {
-					return empty, fmt.Errorf("duplicate usage: %s", name)
+					return empty, 0, fmt.Errorf("duplicate usage: %s", name)
 				}
 				cp.visited[name] = true
 			}
 
-			return container.device, nil
+			return container.device, i, nil
 		}
 	}
 
-	return empty, fmt.Errorf("does not exist: %s", name)
+	return empty, 0, fmt.Errorf("does not exist: %s", name)
 }
 
 // Devices returns the map of devices

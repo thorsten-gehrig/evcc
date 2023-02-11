@@ -166,21 +166,47 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	typ := "template"
+	named := config.Named{
+		Type:  "template",
+		Other: req,
+	}
 	if req["type"] != nil {
-		typ = req["type"].(string)
+		named.Type = req["type"].(string)
 		delete(req, "type")
+	}
+	if req["Name"] != nil {
+		named.Name = req["name"].(string)
+		delete(req, "name")
 	}
 
 	var dev any
+	var id int
 
 	switch class {
 	case templates.Charger:
-		dev, err = charger.NewFromConfig(typ, req)
+		var c api.Charger
+		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
+			if err = config.AddCharger(named, c); err == nil {
+				id, _ = config.ChargerID(named.Name)
+				dev = c
+			}
+		}
 	case templates.Meter:
-		dev, err = meter.NewFromConfig(typ, req)
+		var m api.Meter
+		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
+			if err = config.AddMeter(named, m); err == nil {
+				id, _ = config.MeterID(named.Name)
+				dev = m
+			}
+		}
 	case templates.Vehicle:
-		dev, err = vehicle.NewFromConfig(typ, req)
+		var v api.Vehicle
+		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
+			if err = config.AddVehicle(named, v); err == nil {
+				id, _ = config.VehicleID(named.Name)
+				dev = v
+			}
+		}
 	}
 
 	_ = dev
@@ -190,7 +216,13 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonResult(w, "OK")
+	res := struct {
+		ID int `json:"id"`
+	}{
+		ID: id,
+	}
+
+	jsonResult(w, res)
 }
 
 // testHandler tests a configuration by class
