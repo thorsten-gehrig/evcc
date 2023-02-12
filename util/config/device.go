@@ -22,11 +22,11 @@ func (d *Device) DetailsAsMap() map[string]any {
 	return res
 }
 
-// MapAsDetails converts device details to map
-func MapAsDetails(id int, config map[string]any) []DeviceDetail {
+// mapAsDetails converts device details to map
+func (d *Device) mapAsDetails(config map[string]any) []DeviceDetail {
 	res := make([]DeviceDetail, 0, len(config))
 	for k, v := range config {
-		res = append(res, DeviceDetail{DeviceID: id, Key: k, Value: fmt.Sprintf("%v", v)})
+		res = append(res, DeviceDetail{DeviceID: d.ID, Key: k, Value: fmt.Sprintf("%v", v)})
 	}
 	return res
 }
@@ -83,7 +83,7 @@ func AddDevice(class Class, typ string, config map[string]any) (int, error) {
 		return 0, tx.Error
 	}
 
-	details := MapAsDetails(device.ID, config)
+	details := device.mapAsDetails(config)
 	tx := db.Create(&details)
 
 	return device.ID, tx.Error
@@ -104,7 +104,7 @@ func UpdateDevice(class Class, id int, config map[string]any) (int64, error) {
 		}
 	}
 
-	details := MapAsDetails(device.ID, config)
+	details := device.mapAsDetails(config)
 	tx := db.Save(&details)
 
 	return tx.RowsAffected, tx.Error
