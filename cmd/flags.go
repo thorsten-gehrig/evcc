@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	cfg "github.com/evcc-io/evcc/util/config"
+	"github.com/evcc-io/evcc/util/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -55,7 +55,7 @@ func bindP(cmd *cobra.Command, key string, flagName ...string) {
 	}
 }
 
-func selectByName(args []string, conf *[]cfg.Named) error {
+func selectByName(args []string, conf *[]config.Named) error {
 	if len(args) != 1 {
 		return nil
 	}
@@ -64,7 +64,7 @@ func selectByName(args []string, conf *[]cfg.Named) error {
 
 	for _, c := range *conf {
 		if c.Name == name {
-			*conf = []cfg.Named{c}
+			*conf = []config.Named{c}
 			return nil
 		}
 	}
