@@ -1,4 +1,4 @@
-package db
+package session
 
 import (
 	"github.com/evcc-io/evcc/util"
@@ -13,20 +13,13 @@ type DB struct {
 }
 
 type Database interface {
-	Session(startEnergy float64) *Session
+	NewSession(startEnergy float64) *Session
 	Persist(session interface{})
 }
 
-// New creates a database storage driver
-func New(name string, db *gorm.DB) (*DB, error) {
-	// TODO deprecate
-	var err error
-	if table := "transactions"; db.Migrator().HasTable(table) {
-		err = db.Migrator().RenameTable(table, new(Session))
-	}
-	if err == nil {
-		err = db.AutoMigrate(new(Session))
-	}
+// NewStore creates a session store
+func NewStore(name string, db *gorm.DB) (*DB, error) {
+	err := db.AutoMigrate(new(Session))
 
 	sessiondb := &DB{
 		log:  util.NewLogger("db"),
@@ -37,8 +30,8 @@ func New(name string, db *gorm.DB) (*DB, error) {
 	return sessiondb, err
 }
 
-// Session creates a charging session
-func (s *DB) Session(meter float64) *Session {
+// NewSession creates a charging session
+func (s *DB) NewSession(meter float64) *Session {
 	t := Session{
 		Loadpoint:  s.name,
 		MeterStart: meter,

@@ -11,12 +11,12 @@ import (
 	"github.com/evcc-io/evcc/api"
 	"github.com/evcc-io/evcc/cmd/shutdown"
 	"github.com/evcc-io/evcc/core/coordinator"
-	"github.com/evcc-io/evcc/core/db"
 	"github.com/evcc-io/evcc/core/loadpoint"
 	"github.com/evcc-io/evcc/core/planner"
 	"github.com/evcc-io/evcc/core/prioritizer"
+	"github.com/evcc-io/evcc/core/session"
 	"github.com/evcc-io/evcc/push"
-	serverdb "github.com/evcc-io/evcc/server/db"
+	"github.com/evcc-io/evcc/server/db"
 	"github.com/evcc-io/evcc/tariff"
 	"github.com/evcc-io/evcc/util"
 	"github.com/evcc-io/evcc/util/config"
@@ -128,9 +128,9 @@ func NewSiteFromConfig(
 		lp.coordinator = coordinator.NewAdapter(lp, site.coordinator)
 		lp.planner = planner.New(lp.log, tariff)
 
-		if serverdb.Instance != nil {
+		if db.Instance != nil {
 			var err error
-			if lp.db, err = db.New(lp.Title(), serverdb.Instance); err != nil {
+			if lp.db, err = session.NewStore(lp.Title(), db.Instance); err != nil {
 				return nil, err
 			}
 

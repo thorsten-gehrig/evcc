@@ -11,9 +11,9 @@ import (
 
 	"github.com/evcc-io/evcc/api"
 	"github.com/evcc-io/evcc/core/coordinator"
-	"github.com/evcc-io/evcc/core/db"
 	"github.com/evcc-io/evcc/core/loadpoint"
 	"github.com/evcc-io/evcc/core/planner"
+	"github.com/evcc-io/evcc/core/session"
 	"github.com/evcc-io/evcc/core/soc"
 	"github.com/evcc-io/evcc/core/wrapper"
 	"github.com/evcc-io/evcc/push"
@@ -170,8 +170,8 @@ type Loadpoint struct {
 	progress                *Progress     // Step-wise progress indicator
 
 	// session log
-	db      db.Database
-	session *db.Session
+	db      session.Database
+	session *session.Session
 
 	tasks *util.Queue[Task] // tasks to be executed
 }
@@ -400,7 +400,7 @@ func (lp *Loadpoint) evChargeStartHandler() {
 	lp.socUpdated = time.Time{}
 
 	// set created when first charging session segment starts
-	lp.updateSession(func(session *db.Session) {
+	lp.updateSession(func(session *session.Session) {
 		if session.Created.IsZero() {
 			session.Created = lp.clock.Now()
 		}
