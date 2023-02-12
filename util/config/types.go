@@ -6,11 +6,12 @@ type container[T any] struct {
 }
 
 type Typed struct {
-	Type  string
+	Type  string                 `json:"type"`
 	Other map[string]interface{} `mapstructure:",remain"`
 }
 
 type Named struct {
-	Name, Type string
-	Other      map[string]interface{} `mapstructure:",remain"`
+	Name  string                 `json:"name"`
+	Type  string                 `json:"type"`
+	Other map[string]interface{} `mapstructure:",remain"`
 }

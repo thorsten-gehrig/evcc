@@ -18,6 +18,9 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// typeTemplate is the updatable configuration type
+const typeTemplate = "template"
+
 // templatesHandler returns the list of templates by class
 func templatesHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -46,47 +49,6 @@ func templatesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResult(w, res)
-}
-
-type product struct {
-	Name     string `json:"name"`
-	Template string `json:"template"`
-}
-
-type products []product
-
-func (p products) MarshalJSON() (out []byte, err error) {
-	if p == nil {
-		return []byte(`null`), nil
-	}
-	if len(p) == 0 {
-		return []byte(`{}`), nil
-	}
-
-	out = append(out, '{')
-	for _, e := range p {
-		key, err := json.Marshal(e.Name)
-		if err != nil {
-			return nil, err
-		}
-		val, err := json.Marshal(e.Template)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, key...)
-		out = append(out, ':')
-		out = append(out, val...)
-		out = append(out, ',')
-	}
-
-	// replace last ',' with '}'
-	if len(out) > 1 {
-		out[len(out)-1] = '}'
-	} else {
-		out = append(out, '}')
-	}
-
-	return out, nil
 }
 
 // productsHandler returns the list of products by class
@@ -141,6 +103,8 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := make([]map[string]any, 0, len(named))
+
+	// omit name from config
 	for _, v := range named {
 		conf := maps.Clone(v.Other)
 		conf["type"] = v.Type
@@ -153,14 +117,14 @@ func devicesHandler(w http.ResponseWriter, r *http.Request) {
 
 func namedConfig(req *map[string]any) config.Named {
 	res := config.Named{
-		Type:  "template",
+		Type:  typeTemplate,
 		Other: *req,
 	}
 	if (*req)["type"] != nil {
 		res.Type = (*req)["type"].(string)
 		delete(*req, "type")
 	}
-	if (*req)["Name"] != nil {
+	if (*req)["name"] != nil {
 		res.Name = (*req)["name"].(string)
 		delete(*req, "name")
 	}
@@ -236,6 +200,25 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	jsonResult(w, res)
 }
 
+// rowID converts a named config name to database row id
+func rowID(id int, conf []config.Named) (int, error) {
+	if id > len(conf) {
+		return 0, errors.New("id out of range")
+	}
+
+	cfg := conf[id-1]
+	if cfg.Type != typeTemplate {
+		return 0, errors.New("invalid type")
+	}
+
+	sid, ok := strings.CutPrefix(cfg.Name, "db:")
+	if !ok {
+		return 0, errors.New("invalid id")
+	}
+
+	return strconv.Atoi(sid)
+}
+
 // updateDeviceHandler updates database device's configuration by class
 func updateDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -251,6 +234,10 @@ func updateDeviceHandler(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusBadRequest, err)
 		return
 	}
+	if id < 1 {
+		jsonError(w, http.StatusBadRequest, errors.New("id out of range"))
+		return
+	}
 
 	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -262,23 +249,41 @@ func updateDeviceHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch class {
 	case config.Charger:
+		var rowid int
+		rowid, err = rowID(id, config.ChargersConfig())
+		if err != nil {
+			break
+		}
+
 		var c api.Charger
 		if c, err = charger.NewFromConfig(named.Type, req); err == nil {
-			_, err = config.UpdateDevice(config.Charger, id, named.Other)
+			_, err = config.UpdateDevice(config.Charger, rowid, named.Other)
 		}
 		_ = c
 
 	case config.Meter:
+		var rowid int
+		rowid, err = rowID(id, config.MetersConfig())
+		if err != nil {
+			break
+		}
+
 		var m api.Meter
 		if m, err = meter.NewFromConfig(named.Type, req); err == nil {
-			_, err = config.UpdateDevice(config.Meter, id, named.Other)
+			_, err = config.UpdateDevice(config.Meter, rowid, named.Other)
 		}
 		_ = m
 
 	case config.Vehicle:
+		var rowid int
+		rowid, err = rowID(id, config.VehiclesConfig())
+		if err != nil {
+			break
+		}
+
 		var v api.Vehicle
 		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
-			_, err = config.UpdateDevice(config.Vehicle, id, named.Other)
+			_, err = config.UpdateDevice(config.Vehicle, rowid, named.Other)
 		}
 		_ = v
 	}
@@ -313,7 +318,7 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	typ := "template"
+	typ := typeTemplate
 	if req["type"] != nil {
 		typ = req["type"].(string)
 		delete(req, "type")
