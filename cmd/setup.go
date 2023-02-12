@@ -286,7 +286,7 @@ func configureSiteAndLoadpoints(conf globalConfig) (site *core.Site, err error) 
 		}
 
 		if err == nil {
-			site, err = configureSite(conf.Site, loadpoints, config.Ordered(config.Vehicles()), tariffs)
+			site, err = configureSite(conf.Site, loadpoints, config.Vehicles(), tariffs)
 		}
 	}
 

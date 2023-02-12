@@ -53,7 +53,7 @@ func runCharger(cmd *cobra.Command, args []string) {
 		log.FATAL.Fatal(err)
 	}
 
-	chargers := config.Chargers()
+	chargers := config.ChargersMap()
 
 	current := int64(noCurrent)
 	if flag := cmd.Flags().Lookup(flagCurrent); flag.Changed {

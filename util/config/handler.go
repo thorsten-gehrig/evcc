@@ -50,8 +50,19 @@ func (cp *handler[T]) ByName(name string) (T, int, error) {
 	return empty, 0, fmt.Errorf("does not exist: %s", name)
 }
 
-// Devices returns the map of devices
-func (cp *handler[T]) Devices() map[string]T {
+// Slice returns the slice of devices
+func (cp *handler[T]) Slice() []T {
+	res := make([]T, 0, len(cp.container))
+
+	for _, container := range cp.container {
+		res = append(res, container.device)
+	}
+
+	return res
+}
+
+// Map returns the map of devices
+func (cp *handler[T]) Map() map[string]T {
 	res := make(map[string]T, len(cp.container))
 
 	for _, container := range cp.container {

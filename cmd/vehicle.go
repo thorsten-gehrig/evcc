@@ -46,7 +46,7 @@ func runVehicle(cmd *cobra.Command, args []string) {
 		fatal(err)
 	}
 
-	vehicles := config.Vehicles()
+	vehicles := config.VehiclesMap()
 
 	var flagUsed bool
 	for _, v := range vehicles {

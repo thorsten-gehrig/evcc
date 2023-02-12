@@ -30,8 +30,12 @@ func MeterByName(name string) (api.Meter, int, error) {
 	return instance.meters.ByName(name)
 }
 
-func Meters() map[string]api.Meter {
-	return instance.meters.Devices()
+func Meters() []api.Meter {
+	return instance.meters.Slice()
+}
+
+func MetersMap() map[string]api.Meter {
+	return instance.meters.Map()
 }
 
 func MetersConfig() []Named {
@@ -46,8 +50,12 @@ func ChargerByName(name string) (api.Charger, int, error) {
 	return instance.chargers.ByName(name)
 }
 
-func Chargers() map[string]api.Charger {
-	return instance.chargers.Devices()
+func Chargers() []api.Charger {
+	return instance.chargers.Slice()
+}
+
+func ChargersMap() map[string]api.Charger {
+	return instance.chargers.Map()
 }
 
 func ChargersConfig() []Named {
@@ -62,8 +70,12 @@ func VehicleByName(name string) (api.Vehicle, int, error) {
 	return instance.vehicles.ByName(name)
 }
 
-func Vehicles() map[string]api.Vehicle {
-	return instance.vehicles.Devices()
+func Vehicles() []api.Vehicle {
+	return instance.vehicles.Slice()
+}
+
+func VehiclesMap() map[string]api.Vehicle {
+	return instance.vehicles.Map()
 }
 
 func VehiclesConfig() []Named {
