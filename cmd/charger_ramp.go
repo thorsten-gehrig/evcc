@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// cmdEcho.AddCommand
-
 // chargerRampCmd represents the charger command
 var chargerRampCmd = &cobra.Command{
 	Use:       "ramp [name]",
