@@ -25,15 +25,15 @@
 							<FormRow id="vehicleTemplate" :label="$t('vehicleSettings.template')">
 								<select
 									id="vehicleTemplate"
-									v-model="template"
+									v-model="templateName"
 									class="form-select form-select-sm w-100"
 								>
 									<option
-										v-for="option in vehicleOptions"
-										:key="option.name"
-										:value="option.value"
+										v-for="option in templateOptions"
+										:key="option.productName"
+										:value="option.template"
 									>
-										{{ option.name }}
+										{{ option.productName }}
 									</option>
 								</select>
 							</FormRow>
@@ -41,7 +41,7 @@
 								v-for="param in templateParams"
 								:id="`vehicleParam${param.Name}`"
 								:key="param.Name"
-								:label="param.Description.EN || `[${param.Name}]`"
+								:label="param.Description"
 							>
 								<input
 									:id="`vehicleParam${param.Name}`"
@@ -87,6 +87,7 @@
 <script>
 import FormRow from "./FormRow.vue";
 import api from "../api";
+import { getLocalePreference } from "../i18n";
 import YAML from "json-to-pretty-yaml";
 
 export default {
@@ -96,6 +97,8 @@ export default {
 		return {
 			isModalVisible: false,
 			templates: [],
+			products: [],
+			templateName: null,
 			template: null,
 			values: {},
 			testResult: "",
@@ -103,20 +106,16 @@ export default {
 		};
 	},
 	computed: {
-		vehicleOptions() {
-			const result = [];
-			this.templates.forEach((t) => {
-				t.Products.forEach((p) => {
-					const value = t.Template;
-					let name = this.productName(p);
-					result.push({ name, value });
-				});
-			});
-			result.sort((a, b) => a.name.localeCompare(b.name));
+		templateOptions() {
+			const result = Object.entries(this.products).map(([productName, template]) => ({
+				productName,
+				template,
+			}));
+			result.sort((a, b) => a.productName.localeCompare(b.productName));
 			return result;
 		},
 		templateParams() {
-			const params = this.templates.find((t) => t.Template === this.template)?.Params || [];
+			const params = this.template?.Params || [];
 			return params.filter((p) => !p.Advanced);
 		},
 		configYaml() {
@@ -129,7 +128,7 @@ export default {
 		},
 		apiData() {
 			return {
-				template: this.template,
+				template: this.templateName,
 				...this.values,
 			};
 		},
@@ -137,8 +136,11 @@ export default {
 	watch: {
 		isModalVisible(visible) {
 			if (visible) {
-				this.loadTemplates();
+				this.loadProducts();
 			}
+		},
+		templateName() {
+			this.loadTemplate();
 		},
 		template() {
 			this.values = {};
@@ -153,14 +155,22 @@ export default {
 		this.$refs.modal.removeEventListener("hide.bs.modal", this.modalInvisible);
 	},
 	methods: {
-		productName({ Brand, Description }) {
-			const brand = Brand || "";
-			const description = Description.Generic || Description.EN || "";
-			return `${brand} ${description}`.trim();
-		},
-		async loadTemplates() {
+		async loadProducts() {
 			try {
-				this.templates = (await api.get("config/templates/vehicle")).data.result;
+				this.products = (await api.get("config/products/vehicle")).data.result;
+			} catch (e) {
+				console.error(e);
+			}
+		},
+		async loadTemplate() {
+			try {
+				const opts = {
+					params: {
+						lang: getLocalePreference(),
+						name: this.templateName,
+					},
+				};
+				this.template = (await api.get("config/templates/vehicle", opts)).data.result;
 			} catch (e) {
 				console.error(e);
 			}

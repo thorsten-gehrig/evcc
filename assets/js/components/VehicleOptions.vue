@@ -29,7 +29,7 @@
 					<h6 class="dropdown-header">{{ $t("main.vehicle.moreActions") }}</h6>
 				</li>
 				<li>
-					<button type="button" class="dropdown-item" @click="addVehicle">
+					<button type="button" class="dropdown-item" @click="addVehicle()">
 						{{ $t("main.vehicle.addVehicle") }} 🧪
 					</button>
 				</li>
@@ -70,8 +70,6 @@ export default {
 			this.$emit("remove-vehicle");
 		},
 		addVehicle() {
-			this.$emit("remove-vehicle");
-
 			const modal = Modal.getOrCreateInstance(
 				document.getElementById("vehicleSettingsModal")
 			);
