@@ -87,7 +87,6 @@
 <script>
 import FormRow from "./FormRow.vue";
 import api from "../api";
-import { getLocalePreference } from "../i18n";
 import YAML from "json-to-pretty-yaml";
 
 export default {
@@ -166,7 +165,7 @@ export default {
 			try {
 				const opts = {
 					params: {
-						lang: getLocalePreference(),
+						lang: this.$i18n.locale,
 						name: this.templateName,
 					},
 				};
