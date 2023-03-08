@@ -26,7 +26,7 @@
 								<select
 									id="vehicleTemplate"
 									v-model="templateName"
-									class="form-select form-select-sm w-100"
+									class="form-select w-100"
 								>
 									<option
 										v-for="option in templateOptions"
@@ -41,13 +41,16 @@
 								v-for="param in templateParams"
 								:id="`vehicleParam${param.Name}`"
 								:key="param.Name"
-								:label="param.Description"
+								:optional="!param.Required"
+								:label="param.Description || `[${param.Name}]`"
+								:small-value="['capacity', 'vin'].includes(param.Name)"
 							>
-								<input
+								<InputField
 									:id="`vehicleParam${param.Name}`"
 									v-model="values[param.Name]"
-									:type="param.Mask ? 'password' : 'text'"
-									class="w-100 me-2"
+									:masked="param.Mask"
+									:property="param.Name"
+									class="me-2"
 									:placeholder="param.Example"
 									:required="param.Required"
 								/>
@@ -62,6 +65,9 @@
 								</button>
 								<button type="submit" class="btn btn-primary" @click="test">
 									{{ $t("vehicleSettings.test") }}
+								</button>
+								<button type="submit" class="btn btn-primary" @click="create">
+									{{ $t("vehicleSettings.create") }}
 								</button>
 							</div>
 							<div class="card result">
@@ -86,12 +92,13 @@
 
 <script>
 import FormRow from "./FormRow.vue";
+import InputField from "./forms/InputField.vue";
 import api from "../api";
 import YAML from "json-to-pretty-yaml";
 
 export default {
 	name: "VehicleSettingsModal",
-	components: { FormRow },
+	components: { FormRow, InputField },
 	data() {
 		return {
 			isModalVisible: false,
@@ -181,6 +188,14 @@ export default {
 			} catch (e) {
 				console.error(e);
 				this.testSuccess = false;
+				this.testResult = e.response?.data?.error || e.message;
+			}
+		},
+		async create() {
+			try {
+				this.result = (await api.post("config/devices/vehicle", this.apiData)).data.result;
+			} catch (e) {
+				console.error(e);
 				this.testResult = e.response?.data?.error || e.message;
 			}
 		},
