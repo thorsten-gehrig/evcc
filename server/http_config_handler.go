@@ -177,7 +177,7 @@ func newDeviceHandler(w http.ResponseWriter, r *http.Request) {
 	case config.Vehicle:
 		var v api.Vehicle
 		if v, err = vehicle.NewFromConfig(named.Type, req); err == nil {
-			id, err = config.AddDevice(config.Charger, named.Type, req)
+			id, err = config.AddDevice(config.Vehicle, named.Type, req)
 
 			if err == nil {
 				named.Name = config.NameForID(id)
