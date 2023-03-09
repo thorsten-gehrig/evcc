@@ -10,7 +10,13 @@ type Device struct {
 	ID      int `gorm:"primarykey"`
 	Class   Class
 	Type    string
-	Details []DeviceDetail
+	Details []DeviceDetail `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+}
+
+type DeviceDetail struct {
+	DeviceID int    `gorm:"primarykey"`
+	Key      string `gorm:"primarykey"`
+	Value    string
 }
 
 // DetailsAsMap converts device details to map
@@ -29,12 +35,6 @@ func (d *Device) mapAsDetails(config map[string]any) []DeviceDetail {
 		res = append(res, DeviceDetail{DeviceID: d.ID, Key: k, Value: fmt.Sprintf("%v", v)})
 	}
 	return res
-}
-
-type DeviceDetail struct {
-	DeviceID int    `gorm:"primarykey"`
-	Key      string `gorm:"primarykey"`
-	Value    string
 }
 
 var db *gorm.DB
