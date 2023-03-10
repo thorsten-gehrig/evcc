@@ -9,7 +9,7 @@
 				<small v-if="optional" class="d-sm-block ms-2 ms-sm-0">optional</small>
 			</div>
 		</label>
-		<div :class="`col-sm-${rightWidth} pe-0`">
+		<div :class="`col-sm-${rightWidth}`">
 			<slot />
 		</div>
 	</div>
