@@ -228,8 +228,8 @@ export default {
 		this.$refs.modal.addEventListener("hide.bs.modal", this.modalInvisible);
 	},
 	unmounted() {
-		this.$refs.modal.removeEventListener("show.bs.modal", this.modalVisible);
-		this.$refs.modal.removeEventListener("hide.bs.modal", this.modalInvisible);
+		this.$refs.modal?.removeEventListener("show.bs.modal", this.modalVisible);
+		this.$refs.modal?.removeEventListener("hide.bs.modal", this.modalInvisible);
 	},
 	methods: {
 		modalVisible: function () {
