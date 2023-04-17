@@ -65,6 +65,7 @@ costLimitDescription = "Laikinai aktyvuoja greitą įkrovimą (režime Saulė)."
 modalTitle = "Išmanaus tinklo įkrovimas"
 priceLabel = "Energijos kaina"
 priceLimit = "Kainos limitas"
+none = "nėra"
 
 [header]
 about = "Apie"
